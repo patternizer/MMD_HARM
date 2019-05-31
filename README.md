@@ -1,7 +1,7 @@
 
 <img alt="FIDUCEO: MMD_HARM" align="right" src="http://www.fiduceo.eu/sites/default/files/FIDUCEO-logo.png">
 
-# MMD_HARM
+## MMD_HARM
 
 Development code for generation of SST matchup database from AVHRR Easy FCDR + SST_CCI processing.
 
