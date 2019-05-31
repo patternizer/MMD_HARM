@@ -11,6 +11,18 @@ Development code for generation of SST matchup database from AVHRR Easy FCDR + S
 * `README.md` - README file
 * `calc_radiance.py` - read in harmonisation coefficients + L1B counts data + L1C look-up tables and use measurement equations to generate orbital radiance and convert to brightness temperature
 
+## Data
+
+Data files needed to run calc_radiance.py:
+
+* `mta_l1b.nc` - netCDF-4: Level-1B counts and temperature data for a test orbit from MetOp-A
+* `mta_l1c.nc` - netCDF-4: Level-1C Easy FCDR test orbit containing radiance and BT look-up tables from MetOp-A
+* `FIDUCEO_Harmonisation_Data_37.nc` - netCDF-4: 3.7 micron channel harmonisation test data containing sensor and channel-dependent coefficient
+* `FIDUCEO_Harmonisation_Data_11.nc` - netCDF-4: 11 micron channel harmonisation test data containing sensor and channel-dependent coefficients
+* `FIDUCEO_Harmonisation_Data_12.nc` - netCDF-4: 12 micron channel harmonisation test data containing sensor and channel-dependent coefficients
+
+Available on request from https://github.com/patternizer
+
 ## Contact information
 
 * Michael Taylor (michael.taylor@reading.ac.uk)
