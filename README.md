@@ -9,6 +9,7 @@ Development code for generation of SST matchup database from AVHRR Easy FCDR + S
 
 * `LICENSE` - FIDCUEO license file
 * `README.md` - README file
+* `calc_radiance.py` - read in harmonisation coefficients + L1B counts data + L1C look-up tables and use measurement equations to generate orbital radiance and convert to brightness temperature
 
 ## Contact information
 
