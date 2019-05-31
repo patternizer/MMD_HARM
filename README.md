@@ -1,5 +1,4 @@
-<img alt="FIDUCEO: ENSEMBLE_SST" align="right" src="http://www.fiduceo.\
-eu/sites/default/files/FIDUCEO-logo.png">
+<img alt="FIDUCEO: MMD_HARM" align="right" src="http://www.fiduceo.eu/sites/default/files/FIDUCEO-logo.png">
 
 # MMD_HARM
 
