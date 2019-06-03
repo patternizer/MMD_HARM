@@ -36,6 +36,17 @@ def dbyd(a1,a2,b1,b2):
 #  and lut output from read_in_LUT (sensor specific)        #
 #  RETURNS dbt_drad array in the same shape as L input      #
 #                                                           #
+#  count2rad()                                              #
+#  REQUIRES                                                 #
+#  RETURNS counts in array with same shape as L input       #
+#                                                           #
+#  drad_da()                                                #
+#  REQUIRES                                                 #
+#  RETURNS: If 3.7um channel, then two derivatives of       #
+#  radiance with respect to a1 and a2 coefficents. Else     #
+#  it returns three derivitives of radiance with respect    #
+#  to a1, a2 and a3 coefficents                             #
+#                                                           #
 #############################################################
 
 
@@ -105,3 +116,15 @@ def count2rad(Ce,Cs,Cict,Tict,Tinst,channel,avhrr_sat):
 
 
     return counts
+
+
+def drad_da(Ce,Cs,Cict,Tict,Tinst,channel,avhrr_sat):
+
+    if channel == 37:
+
+
+        return drad_da1,drad_da2
+   
+    else:
+
+        return drad_da1,drad_da2,drad_da3
