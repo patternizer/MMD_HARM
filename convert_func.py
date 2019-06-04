@@ -38,7 +38,9 @@ def dbyd(a1,a2,b1,b2):
 #  RETURNS dbt_drad array in the same shape as L input      #
 #                                                           #
 #  drad_da()                                                #
-#  REQUIRES                                                 #
+#  REQUIRES Radience (L_ict), arrays C_e, C_s, C_ict,       #
+#  T_ict, T_inst, T_mean and T_sdev. Also requires channel  #
+#  and satellite sensor.                                    #
 #  RETURNS: If 3.7um channel, then two derivatives of       #
 #  radiance with respect to a1 and a2 coefficents. Else     #
 #  it returns three derivitives of radiance with respect    #
