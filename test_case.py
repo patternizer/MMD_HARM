@@ -15,10 +15,16 @@ if __name__ == "__main__":
     # RUN PARAMETERS: 
     ################################################################
 
-    channel = 37 
+    ch = 37 
     idx = 7      # MTA (see avhrr_sat)
     l1b_file = 'mta_l1b.nc'
-    harm_file = 'FIDUCEO_Harmonisation_Data_' + str(channel) + '.nc'
+    harm_file = 'FIDUCEO_Harmonisation_Data_' + str(ch) + '.nc'
+    if ch == 37:
+        channel = 3
+    elif ch == 11:
+        channel = 4
+    else:
+        channel = 5
 
     ################################################################
 
@@ -71,12 +77,12 @@ if __name__ == "__main__":
     # Calculate radiance from counts and temperatures with measurement equation
     #
 
-    if channel == 37:
+    if channel == 3:
         Ce = fcdr.ch3_earth_counts
         Cs = fcdr.ch3_space_counts
         Cict = fcdr.ch3_bb_counts
         Lict = fcdr.ICT_Rad_Ch3
-    elif channel == 11:
+    elif channel == 4:
         Ce = fcdr.ch4_earth_counts
         Cs = fcdr.ch4_space_counts
         Cict = fcdr.ch4_bb_counts
