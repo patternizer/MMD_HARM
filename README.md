@@ -9,7 +9,6 @@ Development code for generation of SST matchup database from AVHRR Easy FCDR + S
 
 * `LICENSE` - FIDCUEO license file
 * `README.md` - README file
-* `calc_radiance.py` - implementation of sensor and channel-dependent measurement equations (now superceded by convert_func.py)
 * `convert_func.py` - conversion functions for BT/radiance/counts + LUT
 
 ## Data
