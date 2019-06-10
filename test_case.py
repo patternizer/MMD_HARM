@@ -51,31 +51,29 @@ if __name__ == "__main__":
     lut = con.read_in_LUT(avhrr_sat[idx])
 
     #
-    # Load: L1b orbit counts and temperatures
-    #
-
-    fcdr = xarray.open_dataset(l1b_file, decode_times=False)
-
-    #
     # Load: harmonisation coefficients
     #
 
     ds = xarray.open_dataset(harm_file)
         
     if channel == 37:
-        a0 = ds.parameter[(idx_ *3)].values
-        a1 = ds.parameter[(idx_ *3)+1].values
-        a2 = ds.parameter[(idx_ *3)+2].values
-        a3 = np.nan
+        a1 = ds.parameter[(idx_ *3)].values
+        a2 = ds.parameter[(idx_ *3)+1].values
+        a3 = ds.parameter[(idx_ *3)+2].values
+        a4 = 0.0
+        a5 = 0.0
     else:
-        a0 = ds.parameter[(idx_ *4)].values
-        a1 = ds.parameter[(idx_ *4)+1].values
-        a2 = ds.parameter[(idx_ *4)+2].values
-        a3 = ds.parameter[(idx_ *4)+3].values
+        a1 = ds.parameter[(idx_ *4)].values
+        a2 = ds.parameter[(idx_ *4)+1].values
+        a3 = ds.parameter[(idx_ *4)+2].values
+        a4 = ds.parameter[(idx_ *4)+3].values
+        a5 = 0.0
 
     #
-    # Calculate radiance from counts and temperatures with measurement equation
+    # Load: L1b orbit counts and temperatures
     #
+
+    fcdr = xarray.open_dataset(l1b_file, decode_times=False)
 
     if channel == 3:
         Ce = fcdr.ch3_earth_counts
@@ -93,8 +91,13 @@ if __name__ == "__main__":
         Cict = fcdr.ch5_bb_counts
         Lict = fcdr.ICT_Rad_Ch5
     Tinst = (fcdr.prt - T_mean[idx]) / T_sdev[idx]
+    WV = 0.0 * Tinst
 
-    L = con.count2rad(Ce,Cs,Cict,Lict,Tinst,channel,a0,a1,a2,a3)
+    #
+    # Calculate radiance from counts and temperatures with measurement equation
+    #
+
+    L = con.count2rad(Ce,Cs,Cict,Lict,Tinst,WV,channel,a1,a2,a3,a4,a5)
 
     #
     # Convert radiance to BT
