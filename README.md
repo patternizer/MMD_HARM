@@ -10,6 +10,7 @@ Development code for generation of SST matchup database from AVHRR Easy FCDR + S
 * `LICENSE` - FIDCUEO license file
 * `README.md` - README file
 * `convert_func.py` - conversion functions for BT/radiance/counts + LUT
+* `test_case.py` - load MetOp-A orbit and calculate BT with coeffs from harmonisation
 
 ## Data
 
