@@ -88,27 +88,28 @@ def dbt_drad(L,channel,lut):
 
 def drad_da(Lict,Ce,Cs,Cict,Tict,Tinst,WV,channel,avhrr_sat):
     '''
-    Added derivative for WV term
+    Added derivative for WV term. It's a dummy array at present. will need replacing by derivative of f(WV)
     '''
     try:
         if channel == 3:
             drad_da2 = Lict/(Cict - Cs)
             drad_da3 = Tinst
-            drad_da4 = WV
+            drad_da4 = WV # dummy array at present. will need replacing by derivative of f(WV)
             return drad_da2,drad_da3,drad_da4
         elif channel > 3:
             drad_da2 = Lict/(Cict - Cs)
             drad_da3 = (Ce - Cict) * (Ce - Cs)
             drad_da4 = Tinst
-            drad_da5 = WV
+            drad_da5 = WV # dummy array at present. will need replacing by derivative of f(WV)
             return drad_da2,drad_da3,drad_da4,drad_da5
+
     except:
         print("No FIDUCEO thermal channel selected: channel=", channel, " < 3")
     
 def count2rad(Ce,Cs,Cict,Lict,Tinst,WV,channel,a1,a2,a3,a4,a5):
     '''
-    NB: Tinst is the normalized temperature (T - T_mean)/T_std
-    NB: Additional WV term added in the measurement equations
+    NB: Tinst is the normalized temperature: (T_inst - T_mean)/T_std
+    NB: Additional WV term added in the measurement equations. It's a dummy array at present. will need replacing by derivative of f(WV) 
     '''
     L = np.empty(shape=(Ce.shape[0],Ce.shape[1]))
     try:
