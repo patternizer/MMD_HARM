@@ -2,7 +2,7 @@
 
 # MMD_HARM
 
-Development code to compare brightness temperatures (BT) in the L1C matchup database against theose obtained with ESA SST_CCI processing and FIDUCEO 2harmonisation processing.
+Development code to compare brightness temperatures (BT) in the L1C matchup database against theose obtained with ESA SST_CCI processing and FIDUCEO harmonisation.
 
 ## Contents
 
