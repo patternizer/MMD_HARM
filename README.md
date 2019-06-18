@@ -2,7 +2,7 @@
 
 # MMD_HARM
 
-Development code for generation of a SST matchup database from AVHRR Easy FCDR + SST_CCI processing.
+Development code to compare brightness temperatures (BT) in the L1C matchup database against theose obtained with ESA SST_CCI processing and FIDUCEO 2harmonisation processing.
 
 ## Contents
 
@@ -22,7 +22,7 @@ Data files needed to run the tests:
 * `mta_l1b.nc` - netCDF-4: Level-1B FIDUCEO AVHRRMTA_G L1B counts and temperature data for a test orbit from MetOp-A
 * `mta_l1c.nc` - netCDF-4: Level-1C FIDUCEO AVHRRMTA_G L1C product v0.2Bet for a test orbit from MetOp-A
 * `mta_cci.nc` - netCDF-4: Level-1C ESA SST_CCI AVHRRMTA_G L1C product v1.5 for a test orbit from MetOp-A
-* `mta_mmd.nc` - netCDF-4: Level-1B FIDUCEO multi-sensor match-up dataset for a test orbit from MetOp-A 
+* `mta_mmd.nc` - netCDF-4: Level-1C FIDUCEO multi-sensor match-up dataset for a test orbit from MetOp-A 
 * `FIDUCEO_Harmonisation_Data_37.nc` - netCDF-4: 3.7 micron channel harmonisation test data containing sensor and channel-dependent coefficients
 * `FIDUCEO_Harmonisation_Data_11.nc` - netCDF-4: 11 micron channel harmonisation test data containing sensor and channel-dependent coefficients
 * `FIDUCEO_Harmonisation_Data_12.nc` - netCDF-4: 12 micron channel harmonisation test data containing sensor and channel-dependent coefficients
