@@ -2,10 +2,10 @@
 
 # Compare L1C MMD and ME brightness temperatures
 # ======================================================
-# Version 0.5
-# 19 June, 2019
+# Version 0.6
+# 20 June, 2019
+# https://patternizer.github.io
 # michael.taylor AT reading DOT ac DOT uk
-# patternizer.github.io
 # ======================================================
 
 # =======================================
@@ -20,11 +20,7 @@ import convert_func as con
 
 if __name__ == "__main__":
 
-    ################################################################
-    # RUN PARAMETERS: 
-    ################################################################
-
-    flag_new = True # NEW harmonisation structure (run >= '3.0-4d111a1')
+    flag_new = False # NEW harmonisation structure (run >= '3.0-4d111a1')
     ch = 37
     idx = 7         # MTA (see avhrr_sat)
     if idx == 7:
@@ -138,17 +134,24 @@ if __name__ == "__main__":
     PRT2 = mmd['avhrr-ma_prt_2'][:,3,3]
     PRT3 = mmd['avhrr-ma_prt_3'][:,3,3]
     PRT4 = mmd['avhrr-ma_prt_4'][:,3,3]
-    PRT = ((PRT1 + PRT2 + PRT3 + PRT4) / 4.)
+#    PRT = ((PRT1 + PRT2 + PRT3 + PRT4) / 4.)
+    PRT = np.mean(np.vstack([PRT1, PRT2, PRT3, PRT4]).T, axis=1)
 
-    fig, ax = plt.subplots(2, 1) 
-    ax[0].plot(PRT1,'.',markersize=0.5, label='prt_1')
-    ax[0].plot(PRT2,'.',markersize=0.5, label='prt_2')
-    ax[0].plot(PRT3,'.',markersize=0.5, label='prt_3')
-    ax[0].plot(PRT4,'.',markersize=0.5, label='prt_4')
-    ax[0].legend(markerscale=20, scatterpoints=5, fontsize=8)    
-    ax[1].plot(PRT, 'k', label='PRT mean')
-    ax[1].plot(Tict[:,3,3], 'r', label='Orbit mean')
-    ax[1].legend(markerscale=20, scatterpoints=5, fontsize=8)    
+    fig, ax = plt.subplots(2, 2) 
+    ax[0,0].plot(PRT1, '.', markersize=0.5, label='prt_1')
+    ax[0,0].plot(PRT2, '.', markersize=0.5, label='prt_2')
+    ax[0,0].plot(PRT3, '.', markersize=0.5, label='prt_3')
+    ax[0,0].plot(PRT4, '.', markersize=0.5, label='prt_4')
+    ax[0,0].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)    
+    ax[1,0].plot(Tict[:,3,3] - PRT, 'k.', markersize=0.5, label='Tict - <PRT>')
+    ax[1,0].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)    
+    ax[0,1].hist(PRT, bins=100, label='<PRT>')
+    ax[0,1].hist(Tict[:,3,3],bins=100, label='Tict')
+    ax[0,1].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)    
+    ax[1,1].plot(Tict[:,3,3], PRT, 'k.',markersize=0.5)
+    ax[1,1].set_aspect('equal', adjustable='box')
+    ax[1,1].set_xlabel('Tict')
+    ax[1,1].set_ylabel('<PRT>')    
     plt.tight_layout()
     plotfile = str(ch) + '_' + 'PRT.png'
     plt.savefig(plotfile)
@@ -175,11 +178,42 @@ if __name__ == "__main__":
     coef2 = Planck_C2 * Central_Wavenumber[channel]
     Lict_CCI = (coef1 / ( np.exp(coef2/tstar) - 1.0)) 
 
-    fig, ax = plt.subplots() 
-    ax.plot(Lict_LUT[:,3,3],'.',markersize=0.5, label='Lict_LUT')
-    ax.plot(Lict_CCI[:,3,3],'.',markersize=0.5, label='Lict_CCI * 100')
-    ax.legend(markerscale=20, scatterpoints=5, fontsize=8)    
+    fig, ax = plt.subplots(2, 2) 
+    ax[0,0].plot(Lict_LUT[:,3,3], '.', markersize=0.5, label='Lict_LUT')
+    ax[0,0].plot(Lict_CCI[:,3,3], '.', markersize=0.5, label='Lict_CCI')
+    ax[0,0].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)    
+    ax[1,0].plot(Lict_CCI[:,3,3] - Lict_LUT[:,3,3], 'k.', markersize=0.5, label='Lict_CCI - Lict_LUT')
+    ax[1,0].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)    
+    ax[0,1].hist(Lict_LUT[:,3,3], bins=100, label='Lict_LUT')
+    ax[0,1].hist(Lict_CCI[:,3,3],bins=100, label='Lict_CCI')
+    ax[0,1].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)    
+    ax[1,1].plot(Lict_CCI[:,3,3], Lict_LUT[:,3,3], 'k.',markersize=0.5)
+    ax[1,1].set_aspect('equal', adjustable='box')
+    ax[1,1].set_xlabel('Lict_CCI')
+    ax[1,1].set_ylabel('Lict_LUT')    
     plotfile = str(ch) + '_' + 'Lict.png'
+    plt.tight_layout()
+    plt.savefig(plotfile)
+    plt.close('all')
+
+    BTict_LUT = con.rad2bt(Lict_LUT,channel,lut)
+    BTict_CCI = con.rad2bt(Lict_CCI,channel,lut)
+
+    fig, ax = plt.subplots(2, 2) 
+    ax[0,0].plot(BTict_LUT[:,3,3], '.', markersize=0.5, label='BTict_LUT')
+    ax[0,0].plot(BTict_CCI[:,3,3], '.', markersize=0.5, label='BTict_CCI')
+    ax[0,0].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)    
+    ax[1,0].plot(BTict_CCI[:,3,3] - BTict_LUT[:,3,3], 'k.', markersize=0.5, label='BTict_CCI - BTict_LUT')
+    ax[1,0].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)    
+    ax[0,1].hist(BTict_LUT[:,3,3], bins=100, label='BTict_LUT')
+    ax[0,1].hist(BTict_CCI[:,3,3],bins=100, label='BTict_CCI')
+    ax[0,1].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)    
+    ax[1,1].plot(BTict_CCI[:,3,3], BTict_LUT[:,3,3], 'k.',markersize=0.5)
+    ax[1,1].set_aspect('equal', adjustable='box')
+    ax[1,1].set_xlabel('BTict_CCI')
+    ax[1,1].set_ylabel('BTict_LUT')    
+    plotfile = str(ch) + '_' + 'BTict.png'
+    plt.tight_layout()
     plt.savefig(plotfile)
     plt.close('all')
 
