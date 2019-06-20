@@ -55,8 +55,8 @@ def dbyd(a1,a2,b1,b2):
 
 def read_in_LUT(avhrr_sat):
     LUT = {}
-    all_lut_radiance_dict = np.load('lut_radiance.npy', encoding='bytes').item()
-    all_lut_BT_dict = np.load('lut_BT.npy', encoding='bytes').item()
+    all_lut_radiance_dict = np.load('lut_radiance.npy', encoding='bytes', allow_pickle=True).item()
+    all_lut_BT_dict = np.load('lut_BT.npy', encoding='bytes', allow_pickle=True).item()
     try:
         LUT['L'] = all_lut_radiance_dict[avhrr_sat][:]
         LUT['BT'] = all_lut_BT_dict[avhrr_sat][:]
@@ -68,7 +68,7 @@ def rad2bt(L,channel,lut):
     BT = np.interp(L,lut['L'][:,channel],lut['BT'][:,channel],left=-999.9,right=-999.9)
     return BT
 
-def bt2rad(bt,channel,lut):
+def bt2rad(BT,channel,lut):
     L = np.interp(BT,lut['BT'][:,channel],lut['L'][:,channel],left=-999.9,right=-999.9)
     return L
 
@@ -106,21 +106,24 @@ def drad_da(Lict,Ce,Cs,Cict,Tict,Tinst,WV,channel,avhrr_sat):
     except:
         print("No FIDUCEO thermal channel selected: channel=", channel, " < 3")
     
-def count2rad(Ce,Cs,Cict,Lict,Tinst,WV,channel,a1,a2,a3,a4,a5):
+def count2rad(Ce,Cs,Cict,Lict,Tstar,WV,channel,a0,a1,a2,a3,a4,noT):
     '''
-    NB: Tinst is the normalized temperature: (T_inst - T_mean)/T_std
-    NB: Additional WV term added in the measurement equations. It's a dummy array at present. will need replacing by derivative of f(WV) 
+    NB: Tstar = (T_inst - T_mean) / T_std
+    NB: WV is a dummy term currently unused
+    NB: MTA is a boolean flag: if True --> #105 and #101 (if False --> #106 and #102)
     '''
     L = np.empty(shape=(Ce.shape[0],Ce.shape[1]))
     try:
         if channel == 3:
-            L = a1 + ((Lict * (0.985140 + a2)) / (Cict - Cs)) * (Ce - Cs) + a3 * Tinst + a4 * WV
+            if noT:
+                L = a0 + ((Lict * (0.985140 + a1)) / (Cict - Cs)) * (Ce - Cs)                             # 105
+            L = a0 + ((Lict * (0.985140 + a1)) / (Cict - Cs)) * (Ce - Cs) + a2 * Tstar                    # 106
         elif channel > 3:  
-            L = a1 + ((Lict * (0.985140 + a2)) / (Cict - Cs) + a3 * (Ce - Cict)) * (Ce - Cs) + a4 * Tinst + a5 * WV
+            if noT:
+                L = a0 + ((Lict * (0.985140 + a1)) / (Cict - Cs) + a2 * (Ce - Cict)) * (Ce - Cs)          # 101
+            L = a0 + ((Lict * (0.985140 + a1)) / (Cict - Cs) + a2 * (Ce - Cict)) * (Ce - Cs) + a3 * Tstar # 102
     except:
         print("No FIDUCEO thermal channel selected: channel=", channel, " < 3")
 
     return L
-
-
 
