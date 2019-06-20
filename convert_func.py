@@ -76,14 +76,32 @@ def dbt_drad(L,channel,lut):
     dbtdrad = np.zeros_like(L)
     # Over array L, determine the two values in the LUT either side
     # Then, find dbt by drad and add to new array
+    ndim = len(np.shape(L))
     for i in xrange(0,len(L)):
-        for j in xrange(0,len(L[0])):
-            element = L[i,j]
+        if ndim > 1.5:
+            for j in xrange(0,len(L[0])):
+                if ndim > 2.5:
+                    for k in xrange(0,len(L[0,0])):
+                        element = L[i,j,k]
+                        idx = find_nearest(lut['L'][:,channel],element)
+                        if lut['L'][idx,channel] > element:
+                            dbtdrad[i,j,k] = (dbyd(lut['BT'][idx-1,channel],lut['BT'][idx,channel],lut['L'][idx-1,channel],lut['L'][idx,channel]))
+                        else:
+                            dbtdrad[i,j,k] = (dbyd(lut['BT'][idx,channel],lut['BT'][idx+1,channel],lut['L'][idx,channel],lut['L'][idx+1,channel]))
+                else:
+                    element = L[i,j]
+                    idx = find_nearest(lut['L'][:,channel],element)
+                    if lut['L'][idx,channel] > element:
+                        dbtdrad[i,j] = (dbyd(lut['BT'][idx-1,channel],lut['BT'][idx,channel],lut['L'][idx-1,channel],lut['L'][idx,channel]))
+                    else:
+                        dbtdrad[i,j] = (dbyd(lut['BT'][idx,channel],lut['BT'][idx+1,channel],lut['L'][idx,channel],lut['L'][idx+1,channel]))
+        else:
+            element = L[i]
             idx = find_nearest(lut['L'][:,channel],element)
             if lut['L'][idx,channel] > element:
-                dbtdrad[i,j] = (dbyd(lut['BT'][idx-1,channel],lut['BT'][idx,channel],lut['L'][idx-1,channel],lut['L'][idx,channel]))
+                dbtdrad[i] = (dbyd(lut['BT'][idx-1,channel],lut['BT'][idx,channel],lut['L'][idx-1,channel],lut['L'][idx,channel]))
             else:
-                dbtdrad[i,j] = (dbyd(lut['BT'][idx,channel],lut['BT'][idx+1,channel],lut['L'][idx,channel],lut['L'][idx+1,channel]))
+                dbtdrad[i] = (dbyd(lut['BT'][idx,channel],lut['BT'][idx+1,channel],lut['L'][idx,channel],lut['L'][idx+1,channel]))
     return dbtdrad
 
 def drad_da(Lict,Ce,Cs,Cict,Tict,Tinst,WV,channel,avhrr_sat):
