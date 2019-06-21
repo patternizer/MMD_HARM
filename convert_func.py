@@ -68,6 +68,31 @@ def rad2bt(L,channel,lut):
     BT = np.interp(L,lut['L'][:,channel],lut['BT'][:,channel],left=-999.9,right=-999.9)
     return BT
 
+def rad2bt_cci(L,channel):
+    offset = np.append(np.zeros(3),np.array([-2.0653147,-0.56503332,-0.38472766]))
+    slope = np.append(np.zeros(3),np.array([1.0034418,1.0015090,1.0011264]))         
+    Central_Wavenumber = np.append(np.zeros(3),np.array([2687.0392,927.2763,837.80762]))
+    Planck_C1 = 0.00001191042722
+    Planck_C2 = 1.4387752
+    coef1 = Planck_C1 * Central_Wavenumber[channel]**3
+    coef2 = Planck_C2 * Central_Wavenumber[channel]
+
+    tstar = coef2/np.log(1.+coef1/L)
+    BT = offset[channel]+slope[channel]*tstar
+    return BT
+
+def bt2rad_cci(BT,channel):
+    offset = np.append(np.zeros(3),np.array([-2.0653147,-0.56503332,-0.38472766]))
+    slope = np.append(np.zeros(3),np.array([1.0034418,1.0015090,1.0011264]))         
+    Central_Wavenumber = np.append(np.zeros(3),np.array([2687.0392,927.2763,837.80762]))
+    Planck_C1 = 0.00001191042722
+    Planck_C2 = 1.4387752
+    coef1 = Planck_C1 * Central_Wavenumber[channel]**3
+    coef2 = Planck_C2 * Central_Wavenumber[channel]
+    tstar = (BT-offset[channel])/slope[channel]
+    L = (coef1/(np.exp(coef2/tstar)-1.))
+    return L
+
 def bt2rad(BT,channel,lut):
     L = np.interp(BT,lut['BT'][:,channel],lut['L'][:,channel],left=-999.9,right=-999.9)
     return L
