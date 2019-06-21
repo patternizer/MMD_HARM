@@ -28,9 +28,6 @@ if __name__ == "__main__":
         noT = True
     else:
         noT = False
-    l1b_file = 'mta_l1b.nc'
-    l1c_file = 'mta_l1c.nc'
-    cci_file = 'mta_cci.nc'
     mmd_file = 'mta_mmd.nc'
     har_file = 'FIDUCEO_Harmonisation_Data_' + str(ch) + '.nc'
     if ch == 37:
@@ -46,9 +43,11 @@ if __name__ == "__main__":
     # senesor list and indexing
     #
 
+    # NB: LUT sensor sequence
+
     avhrr_sat = [b'N12',b'N14',b'N15',b'N16',b'N17',b'N18',b'N19',b'MTA',b'MTB']
 
-    # NB: Harmonisation coefficients provided by Ralf Quast:
+    # NB: HAR sensor sequence
 
     if flag_new:
         # RQ: NEW   AATSR,   MTA,   N19,   N18,   N17,   N16,   N15,   N14,   N12,   N11
@@ -68,48 +67,17 @@ if __name__ == "__main__":
     lut = con.read_in_LUT(avhrr_sat[idx])
 
     #
-    # Load: L1b orbit counts and temperatures
-    #
-
-    l1b = xarray.open_dataset(l1b_file, decode_times=False)
-
-    #
-    # Load: L1c orbit counts and temperatures
-    #
-
-    l1c = xarray.open_dataset(l1c_file, decode_times=False)
-
-    #
-    # Load: ESA_CCI L1C (v2.10.1) counts and temperatures
-    #
-
-    cci = xarray.open_dataset(cci_file, decode_times=False)
-
-    #
     # Load: mmd orbit counts and temperatures
     #
 
     mmd = xarray.open_dataset(mmd_file, decode_times=False)
 
     if channel == 3: 
-        BT_L1B = l1b['ch3b']             # (12348, 409)
-        BT_L1C = l1c['Ch3b']             # (14062, 409)
-        BT_CCI = cci['ch3b'][0,:,:]      # (12233, 409)
         BT_MMD = mmd['avhrr-ma_ch3b']    # (55604, 7, 7)
     elif channel == 4: 
-        BT_L1B = l1b['ch4']
-        BT_L1C = l1c['Ch4']
-        BT_CCI = cci['ch4'][0,:,:]
         BT_MMD = mmd['avhrr-ma_ch4']
     else: 
-        BT_L1B = l1b['ch5']
-        BT_L1C = l1c['Ch5']
-        BT_CCI = cci['ch5'][0,:,:]
         BT_MMD = mmd['avhrr-ma_ch5']
-
-    ###################################
-    # GBCS v1.5 CCI-like coefficients #
-    ###################################
      
     #
     # Load: mmd counts and temperatures
@@ -135,7 +103,6 @@ if __name__ == "__main__":
     PRT2 = mmd['avhrr-ma_prt_2'][:,3,3]
     PRT3 = mmd['avhrr-ma_prt_3'][:,3,3]
     PRT4 = mmd['avhrr-ma_prt_4'][:,3,3]
-#    PRT = ((PRT1 + PRT2 + PRT3 + PRT4) / 4.)
     PRT = np.mean(np.vstack([PRT1, PRT2, PRT3, PRT4]).T, axis=1)
 
     fig, ax = plt.subplots(2, 2) 
@@ -163,7 +130,7 @@ if __name__ == "__main__":
     #
 
     Lict_LUT = con.bt2rad(Tict,channel,lut)
-    Lict_CCI = con.rad2bt_cci(Tict,channel) 
+    Lict_CCI = con.bt2rad_cci(Tict,channel) 
 
     fig, ax = plt.subplots(2, 2) 
     ax[0,0].plot(Lict_LUT[:,3,3], '.', markersize=0.5, label='Lict_LUT')
@@ -184,7 +151,7 @@ if __name__ == "__main__":
     plt.close('all')
 
     #
-    #   convert Tict --> Lict
+    #   convert Lict --> BTict
     #
 
     BTict_LUT = con.rad2bt(Lict_LUT,channel,lut)
@@ -209,6 +176,22 @@ if __name__ == "__main__":
     plt.close('all')
 
     #
+    # Test CCI conversion over full range of LUT
+    #
+
+    LUT_L = lut['L'][:,channel]
+    LUT_BT = lut['BT'][:,channel]
+    CCI_BT = con.rad2bt_cci(LUT_L,channel)
+
+    fig, ax = plt.subplots()
+    plt.plot(CCI_BT, CCI_BT-LUT_BT)
+    plt.xlabel('BT (CCI) / $K$')
+    plt.ylabel('BT difference (CCI-LUT) / $K$')
+    plotfile = str(ch) + '_' + 'BT_CCI_v_LUT.png'
+    plt.savefig(plotfile)
+    plt.close('all')
+
+    #
     #   convert Ce,Cs,Cict,Lict --> L
     #
 
@@ -222,89 +205,92 @@ if __name__ == "__main__":
     # Load: harmonisation coefficients
     #
 
+    nsensor = 9
+    if channel == 3:
+        npar = 3
+    else:
+        npar = 4
+    parameters = np.empty(shape=(npar*nsensor))
+
     har = xarray.open_dataset(har_file, decode_cf=True)
 
-    par = np.cumsum(har.sensor_equation_parameter_count)
-#    A = har.parameter(par[idx_ -1]:par[idx_]) 
-    if channel == 37:
-        a0 = har.parameter[(idx_ *3)].values
-        a1 = har.parameter[(idx_ *3)+1].values
-        a2 = har.parameter[(idx_ *3)+2].values
+    parameter = har.parameter
+    parameter_count = har.sensor_equation_parameter_count[1:].values
+    parameter_pos = np.cumsum(har.sensor_equation_parameter_count).values
+    for idx in range(len(parameter_count)):
+        parameters[(idx*npar):(idx*npar+parameter_count[idx])] = parameter[(parameter_pos[idx]):(parameter_pos[idx+1])]
+                     
+    if channel == 3:
+        a0 = parameters[(idx_ *npar)]
+        a1 = parameters[(idx_ *npar)+1]
+        a2 = parameters[(idx_ *npar)+2]
         a3 = 0.0
         a4 = 0.0
         if noT:
             a2 = 0.0
     else:
-        a0 = har.parameter[(idx_ *4)].values
-        a1 = har.parameter[(idx_ *4)+1].values
-        a2 = har.parameter[(idx_ *4)+2].values
-        a3 = har.parameter[(idx_ *4)+3].values
+        a0 = parameters[(idx_ *npar)]
+        a1 = parameters[(idx_ *npar)+1]
+        a2 = parameters[(idx_ *npar)+2]
+        a3 = parameters[(idx_ *npar)+3]
         a4 = 0.0
         if noT:
             a3 = 0.0
 
     #
-    # Measurement equation correction term: Instrumental temperature
+    # Measurement equation correction term: Tinst
     #
     
-#    T_mean = np.array([ 290.327113, 288.637636, 294.758564, 292.672201, 288.106630, 288.219774, 287.754638, 286.125823, np.nan])
-#    T_sdev = np.array([ 2.120666, 1.053762, 2.804361, 3.805704, 1.607656, 0.607697, 0.117681, 0.049088, np.nan])
-
     T_mean = np.mean(Tict[:,3,3])
     T_sdev = np.std(Tict[:,3,3])
-    Tinst = (mmd['avhrr-ma_orbital_temperature'] - T_mean[idx]) / T_sdev[idx]
+    Tinst = (mmd['avhrr-ma_orbital_temperature'][:,3,3] - T_mean) / T_sdev
 
     #
-    # Measurement equation correction term: Water vapour (dummy for now)
+    # Measurement equation correction term: WV (dummy for now)
     #
 
-    WV = 0.0 * Tinst
+    WV = []
 
-    L_HAR = con.count2rad(Ce,Cs,Cict,Lict,Tinst,WV,channel,a0,a1,a2,a3,a4,noT) / 100.
+    Lict = Lict_CCI
+    L_HAR = con.count2rad(Ce,Cs,Cict,Lict,Tinst,WV,channel,a0,a1,a2,a3,a4,noT)
 
     #
     # Convert radiance to BT
     #
 
-    BT_LUT = con.rad2bt(L_LUT,channel,lut)
-    BT_CCI = con.rad2bt(L_CCI,channel,lut)
-    BT_HAR = con.rad2bt(L_HAR,channel,lut)
-    
-    #===============================================
-
-    L_LUT = L_LUT[:,3,3]
-    L_CCI = L_CCI[:,3,3]
-    L_HAR = L_HAR[:,3,3]
-    BT_CCI = BT_CCI[:,3,3]
-    BT_HAR = BT_HAR[:,3,3]
+    BT_CCI = con.rad2bt_cci(L_CCI,channel)[:,3,3]
+    BT_HAR = con.rad2bt_cci(L_HAR,channel)[:,3,3]
     BT_MMD = BT_MMD[:,3,3]
 
     gd = BT_HAR > 0
     
     fig, ax = plt.subplots(2, 2) 
-    ax[0,0].plot(BT_CCI[gd],'.',markersize=0.5, label='BT (from CCI)')
-    ax[0,0].plot(BT_HAR[gd],'.',markersize=0.5, label='BT (from HAR)')
-    ax[0,0].plot(BT_MMD[gd],'.',markersize=0.5, label='BT (from MMD)')
-    ax[0,0].legend(markerscale=20, scatterpoints=5, fontsize=8)
+    ax[0,0].plot(BT_CCI[gd],'.',markersize=0.5, label='BT(CCI)')
+    ax[0,0].plot(BT_HAR[gd],'.',markersize=0.5, label='BT(HAR)')
+    ax[0,0].plot(BT_MMD[gd],'.',markersize=0.5, label='BT(MMD)')
+    ax[0,0].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)
     ax[0,0].set_ylim(200,320)
-    ax[0,0].set_xlabel('MM')
-    ax[0,0].set_ylabel('BT')
-    ax[1,0].plot(BT_MMD[gd], BT_MMD[gd]-BT_CCI[gd],'.',markersize=0.5)
-    ax[1,0].plot(BT_MMD[gd], BT_MMD[gd]-BT_HAR[gd],'.',markersize=0.5)
+    ax[0,0].set_ylabel('BT / $K$')
+    ax[1,0].plot(BT_MMD[gd], BT_MMD[gd]-BT_CCI[gd],'.',markersize=0.5, label='BT(MMD)-BT(CCI)')
+    ax[1,0].plot(BT_MMD[gd], BT_MMD[gd]-BT_HAR[gd],'.',markersize=0.5, label='BT(MMD)-BT(HAR)')
+    ax[1,0].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)
     ax[1,0].set_xlim(200,320)
-    ax[1,0].set_ylim(-1,1)
-    ax[1,0].set_xlabel('BT_MMD')
-    ax[1,0].set_ylabel('BT(MMD)-BT(x)')
-    ax[0,1].hist((BT_MMD[gd]-BT_CCI[gd]),bins=100)
-    ax[0,1].hist((BT_MMD[gd]-BT_HAR[gd]),bins=100)
-    ax[0,1].set_xlabel('BT(MMD)-BT(x)')
-    ax[1,1].set_ylabel('count (nbins=100)')
-    ax[1,1].plot(BT_MMD[gd], BT_CCI[gd], '.',markersize=0.5)
-    ax[1,1].plot(BT_MMD[gd], BT_HAR[gd], '.',markersize=0.5)
+    ax[1,0].set_ylim(-2,2)
+    ax[1,0].set_xlabel('BT(MMD) / $K$')
+    ax[1,0].set_ylabel('BT(MMD)-BT(x) / $K$')
+    ax[0,1].hist((BT_MMD[gd]-BT_CCI[gd]),bins=100, label='BT(MMD)-BT(CCI)')  
+    ax[0,1].hist((BT_MMD[gd]-BT_HAR[gd]),bins=100, label='BT(MMD)-BT(HAR)') 
+    ax[0,1].set_xlim(-2,2)
+    ax[0,1].set_xlabel('BT(MMD)-BT(x) / $K$')
+    ax[0,1].set_ylabel('count (nbins=100)')
+    ax[0,1].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)
+    ax[1,1].plot(BT_MMD[gd], BT_CCI[gd], '.',markersize=0.5, label='BT(CCI)')
+    ax[1,1].plot(BT_MMD[gd], BT_HAR[gd], '.',markersize=0.5, label='BT(HAR)')
+    ax[1,1].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)
     ax[1,1].set_xlim(200,320)
     ax[1,1].set_ylim(200,320)
-    ax[1,1].set_xlabel('BT_MMD')
-    ax[1,1].set_ylabel('BT(x)')
+    ax[1,1].set_xlabel('BT(MMD) / $K$')
+    ax[1,1].set_ylabel('BT(x) / $K$')
     plt.tight_layout()
     plotfile = str(ch) + '_' + 'BT_v_BT_MMD.png'
     plt.savefig(plotfile)
