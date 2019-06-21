@@ -2,11 +2,12 @@
 
 # Compare L1C MMD and ME brightness temperatures
 # ======================================================
-# Version 0.6
-# 20 June, 2019
+# Version 0.7
+# 21 June, 2019
 # https://patternizer.github.io
 # michael.taylor AT reading DOT ac DOT uk
 # ======================================================
+
 
 # =======================================
 # RUN TEST CASE
@@ -106,9 +107,9 @@ if __name__ == "__main__":
         BT_CCI = cci['ch5'][0,:,:]
         BT_MMD = mmd['avhrr-ma_ch5']
 
-    ##############################
-    # v1.5 CCI-like coefficients #
-    ##############################
+    ###################################
+    # GBCS v1.5 CCI-like coefficients #
+    ###################################
      
     #
     # Load: mmd counts and temperatures
@@ -161,22 +162,8 @@ if __name__ == "__main__":
     #   convert Tict --> Lict
     #
 
-    # METHOD 1: LUT
-
     Lict_LUT = con.bt2rad(Tict,channel,lut)
-
-    # METHOD 2: CCI
-
-    offset = np.append( np.zeros(3), np.array([-2.0653147, -0.56503332, -0.38472766]) )      # Aval
-    slope = np.append( np.zeros(3), np.array([1.0034418, 1.0015090, 1.0011264]) )            # Bval
-#   Central_Wavenumber = np.append( np.zeros(3), np.array([1687.0392, 927.2763, 837.80762])) # NuC (in CCI)
-    Central_Wavenumber = np.append( np.zeros(3), np.array([2687.0392, 927.2763, 837.80762])) # NuC (in Jon's L1B)
-    tstar = (Tict - offset[channel])/slope[channel]
-    Planck_C1 = 0.00001191042722
-    Planck_C2 = 1.4387752
-    coef1 = Planck_C1 * Central_Wavenumber[channel]**3
-    coef2 = Planck_C2 * Central_Wavenumber[channel]
-    Lict_CCI = (coef1 / ( np.exp(coef2/tstar) - 1.0)) 
+    Lict_CCI = con.rad2bt_cci(Tict,channel) 
 
     fig, ax = plt.subplots(2, 2) 
     ax[0,0].plot(Lict_LUT[:,3,3], '.', markersize=0.5, label='Lict_LUT')
@@ -196,8 +183,12 @@ if __name__ == "__main__":
     plt.savefig(plotfile)
     plt.close('all')
 
+    #
+    #   convert Tict --> Lict
+    #
+
     BTict_LUT = con.rad2bt(Lict_LUT,channel,lut)
-    BTict_CCI = con.rad2bt(Lict_CCI,channel,lut)
+    BTict_CCI = con.rad2bt_cci(Lict_LUT,channel)
 
     fig, ax = plt.subplots(2, 2) 
     ax[0,0].plot(BTict_LUT[:,3,3], '.', markersize=0.5, label='BTict_LUT')
@@ -217,23 +208,11 @@ if __name__ == "__main__":
     plt.savefig(plotfile)
     plt.close('all')
 
-    #-------------------------------------------------------------------------------
-    # Calculate radiance from counts and temperatures with measurement equation: CCI
-    #-------------------------------------------------------------------------------
+    #
+    #   convert Ce,Cs,Cict,Lict --> L
+    #
 
-    Lict = Lict_CCI
-
-    Nspace = np.append( np.zeros(3), np.array([0, -4.98, -3.4]) )
-    nonlinear = np.vstack([np.zeros(3), np.zeros(3), np.zeros(3), np.zeros(3), np.array([5.44, -0.10152, 0.00046964]), np.array([3.84, -0.06249, 0.00025239])]).T
-    a0 = nonlinear[0,channel] + (1. + nonlinear[1,channel] + nonlinear[2,channel]*Nspace[channel]) * Nspace[channel]
-    a1 = 1. + nonlinear[1,channel] + 2. * nonlinear[2,channel] * Nspace[channel]
-    a2 = nonlinear[2,channel]
-    s = Cs
-    g = (Lict - Nspace[channel]) / (Cs - Cict)
-    term1 = a0 + a1*s*g + a2*s*s*g*g
-    term2 = -1.*a1*g - 2.*a2*s*g*g
-    term3 = a2*g*g
-    L_CCI = (term1 + term2*Ce + term3*Ce*Ce)
+    L_CCI = con.counts2rad_cci(channel,Ce,Cs,Cict,Lict_CCI)    
 
     #-------------------------------------------------------------------------------
     # Calculate radiance from counts and temperatures with measurement equation: HAR
