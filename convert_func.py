@@ -49,7 +49,19 @@ def dbyd(a1,a2,b1,b2):
 #  count2rad()                                               #
 #  REQUIRES arrays Ce,Cs,Cict,Lict,Tinst,WV,channel (either  #
 #  3, 4 or 5), and harmonisation coeffs a1,a2,a3,a4,a5       #
-#  RETURNS radiance in array with same shape as Le input     #
+#  RETURNS radiance in array with same shape as Ce input     #
+#                                                            #
+#  count2rad_cci()                                           #
+#  REQUIRES arrays Ce,Cs,Cict,Lict,channel (3, 4 or 5)       #
+#  RETURNS radiance in array with same shape as Ce input     #
+#                                                            #
+#  rad2bt_cci()                                              #
+#  REQUIRES array of radiance, channel (either 3, 4 or 5)    #
+#  RETURNS BT in array of same initial shape of L            #
+#                                                            #
+#  bt2rad_cci()                                              #
+#  REQUIRES array of BT, channel (either 3, 4 or 5)          #
+#  RETURNS L in array of same initial shape of BT            #
 #                                                            #
 ##############################################################
 
@@ -126,7 +138,7 @@ def drad_da(Lict,Ce,Cs,Cict,Tict,Tinst,WV,channel,avhrr_sat):
     
 def count2rad(Ce,Cs,Cict,Lict,Tstar,WV,channel,a0,a1,a2,a3,a4,noT):
     '''
-    NB: Tstar = (T_inst - T_mean) / T_std
+    NB: Tstar = (Tinst - T_mean) / T_std
     NB: WV is a dummy term currently unused
     NB: MTA is a boolean flag: if True --> #105 and #101 (if False --> #106 and #102)
     '''
@@ -145,7 +157,27 @@ def count2rad(Ce,Cs,Cict,Lict,Tstar,WV,channel,a0,a1,a2,a3,a4,noT):
 
     return L
 
+def counts2rad_cci(channel,Ce,Cs,Cict,Lict):
+    '''
+    CCI v1.5 counts --> L measurement equation
+    '''
+    Nspace = np.append(np.zeros(3),np.array([0,-4.98,-3.4]))
+    nonlinear = np.vstack([np.zeros(3),np.zeros(3),np.zeros(3),np.zeros(3),np.array([5.44,-0.10152,0.00046964]), np.array([3.84,-0.06249,0.00025239])]).T
+    a0 = nonlinear[0,channel]+(1.+nonlinear[1,channel]+nonlinear[2,channel]*Nspace[channel])*Nspace[channel]
+    a1 = 1.+nonlinear[1,channel]+2.*nonlinear[2,channel]*Nspace[channel]
+    a2 = nonlinear[2,channel]
+    s = Cs
+    g = (Lict-Nspace[channel])/(Cs-Cict)
+    term1 = a0+a1*s*g+a2*s*s*g*g
+    term2 = -1.*a1*g-2.*a2*s*g*g
+    term3 = a2*g*g
+    L = (term1+term2*Ce+term3*Ce*Ce)
+    return L
+
 def rad2bt_cci(L,channel):
+    '''
+    CCI v1.5 L --> BT conversion
+    '''
     offset = np.append(np.zeros(3),np.array([-2.0653147,-0.56503332,-0.38472766]))
     slope = np.append(np.zeros(3),np.array([1.0034418,1.0015090,1.0011264]))         
     Central_Wavenumber = np.append(np.zeros(3),np.array([2687.0392,927.2763,837.80762]))
@@ -159,6 +191,9 @@ def rad2bt_cci(L,channel):
     return BT
 
 def bt2rad_cci(BT,channel):
+    '''
+    CCI v1.5 BT --> L conversion
+    '''
     offset = np.append(np.zeros(3),np.array([-2.0653147,-0.56503332,-0.38472766]))
     slope = np.append(np.zeros(3),np.array([1.0034418,1.0015090,1.0011264]))         
     Central_Wavenumber = np.append(np.zeros(3),np.array([2687.0392,927.2763,837.80762]))
@@ -168,20 +203,6 @@ def bt2rad_cci(BT,channel):
     coef2 = Planck_C2 * Central_Wavenumber[channel]
     tstar = (BT-offset[channel])/slope[channel]
     L = (coef1/(np.exp(coef2/tstar)-1.))
-    return L
-
-def counts2rad_cci(channel,Ce,Cs,Cict,Lict):
-    Nspace = np.append(np.zeros(3),np.array([0,-4.98,-3.4]))
-    nonlinear = np.vstack([np.zeros(3),np.zeros(3),np.zeros(3),np.zeros(3),np.array([5.44,-0.10152,0.00046964]), np.array([3.84,-0.06249,0.00025239])]).T
-    a0 = nonlinear[0,channel]+(1.+nonlinear[1,channel]+nonlinear[2,channel]*Nspace[channel])*Nspace[channel]
-    a1 = 1.+nonlinear[1,channel]+2.*nonlinear[2,channel]*Nspace[channel]
-    a2 = nonlinear[2,channel]
-    s = Cs
-    g = (Lict-Nspace[channel])/(Cs-Cict)
-    term1 = a0+a1*s*g+a2*s*s*g*g
-    term2 = -1.*a1*g-2.*a2*s*g*g
-    term3 = a2*g*g
-    L = (term1+term2*Ce+term3*Ce*Ce)
     return L
 
 
