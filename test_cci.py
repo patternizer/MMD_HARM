@@ -22,7 +22,7 @@ import convert_func as con
 if __name__ == "__main__":
 
     flag_new = False # NEW harmonisation structure (run >= '3.0-4d111a1')
-    ch = 37
+    ch = 12
     idx = 7         # MTA (see avhrr_sat)
     if idx == 7:
         noT = True
@@ -120,8 +120,8 @@ if __name__ == "__main__":
     ax[1,1].set_aspect('equal', adjustable='box')
     ax[1,1].set_xlabel('Tict')
     ax[1,1].set_ylabel('<PRT>')    
-    plt.tight_layout()
     plotfile = str(ch) + '_' + 'PRT.png'
+    plt.tight_layout()
     plt.savefig(plotfile)
     plt.close('all')
 
@@ -188,6 +188,7 @@ if __name__ == "__main__":
     plt.xlabel('BT (CCI) / $K$')
     plt.ylabel('BT difference (CCI-LUT) / $K$')
     plotfile = str(ch) + '_' + 'BT_CCI_v_LUT.png'
+    plt.tight_layout()
     plt.savefig(plotfile)
     plt.close('all')
 
@@ -251,8 +252,7 @@ if __name__ == "__main__":
 
     WV = []
 
-    Lict = Lict_CCI
-    L_HAR = con.count2rad(Ce,Cs,Cict,Lict,Tinst,WV,channel,a0,a1,a2,a3,a4,noT)
+    L_HAR = con.count2rad(Ce,Cs,Cict,Lict_CCI,Tinst,WV,channel,a0,a1,a2,a3,a4,noT)
 
     #
     # Convert radiance to BT
@@ -291,9 +291,54 @@ if __name__ == "__main__":
     ax[1,1].set_ylim(200,320)
     ax[1,1].set_xlabel('BT(MMD) / $K$')
     ax[1,1].set_ylabel('BT(x) / $K$')
-    plt.tight_layout()
     plotfile = str(ch) + '_' + 'BT_v_BT_MMD.png'
+    plt.tight_layout()
     plt.savefig(plotfile)
+    plt.close('all')
+
+    #
+    # Test MMD counts2rad_cci versus MMD bt2rad conversion over range of Lict_LUT calculated from Tict in MMD file
+    #
+
+    L_HAR = con.count2rad(Ce,Cs,Cict,Lict_LUT,Tinst,WV,channel,a0,a1,a2,a3,a4,noT)[:,3,3]
+    L_MMD_counts2rad = con.counts2rad_cci(channel,Ce,Cs,Cict,Lict_LUT)[:,3,3]
+    L_MMD_bt2rad = con.bt2rad(BT_MMD,channel,lut)
+    bd = L_MMD_bt2rad < -999.
+    L_MMD_bt2rad[bd] = np.nan
+    gd = np.isfinite(L_MMD_bt2rad)
+
+    fig, ax = plt.subplots()
+    plt.plot(L_MMD_bt2rad[gd], L_MMD_bt2rad[gd]-L_MMD_counts2rad[gd], '.', markersize=0.5, label='MMD(bt2rad)-MMD(counts2rad)')
+    plt.plot(L_MMD_bt2rad[gd], L_MMD_bt2rad[gd]-L_HAR[gd], '.', markersize=0.5, label='MMD(bt2rad)-HAR')
+    ax.legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)
+    plt.xlabel('L: MMD(bt2rad) / $W m^{-2}sr^{-1}$')
+    plt.ylabel('L difference / $W m^{-2}sr^{-1}$')
+    plotfile = str(ch) + '_' + 'L_MMD_v_HAR_LUT.png'
+    plt.tight_layout()
+    plt.savefig(plotfile)
+    plt.close('all')
+
+    #
+    # Test MMD counts2rad_cci versus MMD bt2rad conversion over range of Lict_CCI calculated from Tict in MMD file
+    #
+
+    L_HAR = con.count2rad(Ce,Cs,Cict,Lict_CCI,Tinst,WV,channel,a0,a1,a2,a3,a4,noT)[:,3,3]
+    L_MMD_counts2rad = con.counts2rad_cci(channel,Ce,Cs,Cict,Lict_CCI)[:,3,3]
+    L_MMD_bt2rad = con.bt2rad_cci(BT_MMD,channel)
+    bd = L_MMD_bt2rad < -999.
+    L_MMD_bt2rad[bd] = np.nan
+    gd = np.isfinite(L_MMD_bt2rad)
+
+    fig, ax = plt.subplots()
+    plt.plot(L_MMD_bt2rad[gd], L_MMD_bt2rad[gd]-L_MMD_counts2rad[gd], '.', markersize=0.5, label='MMD(bt2rad_cci)-MMD(counts2rad_cci)')
+    plt.plot(L_MMD_bt2rad[gd], L_MMD_bt2rad[gd]-L_HAR[gd], '.', markersize=0.5, label='MMD(bt2rad_cci)-HAR(Lict_CCI)')
+    ax.legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)
+    plt.xlabel('L: MMD(bt2rad_cci) / $W m^{-2}sr^{-1}$')
+    plt.ylabel('L difference / $W m^{-2}sr^{-1}$')
+    plotfile = str(ch) + '_' + 'L_MMD_v_HAR_CCI.png'
+    plt.tight_layout()
+    plt.savefig(plotfile)
+    plt.close('all')
 
     print('** END')
 
