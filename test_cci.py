@@ -73,11 +73,11 @@ if __name__ == "__main__":
     mmd = xarray.open_dataset(mmd_file, decode_times=False)
 
     if channel == 3: 
-        BT_MMD = mmd['avhrr-ma_ch3b']    # (55604, 7, 7)
+        BT_MMD = mmd['avhrr-ma_ch3b'][:,3,3]    # (55604, 7, 7)
     elif channel == 4: 
-        BT_MMD = mmd['avhrr-ma_ch4']
+        BT_MMD = mmd['avhrr-ma_ch4'][:,3,3]
     else: 
-        BT_MMD = mmd['avhrr-ma_ch5']
+        BT_MMD = mmd['avhrr-ma_ch5'][:,3,3]
      
     #
     # Load: mmd counts and temperatures
@@ -179,15 +179,15 @@ if __name__ == "__main__":
     # Test CCI conversion over full range of LUT
     #
 
-    LUT_L = lut['L'][:,channel]
-    LUT_BT = lut['BT'][:,channel]
-    CCI_BT = con.rad2bt_cci(LUT_L,channel)
+    L_LUT = lut['L'][:,channel]
+    BT_LUT = lut['BT'][:,channel]
+    BT_CCI_LUT = con.rad2bt_cci(L_LUT,channel)
 
     fig, ax = plt.subplots()
-    plt.plot(CCI_BT, CCI_BT-LUT_BT)
-    plt.xlabel('BT (CCI) / $K$')
-    plt.ylabel('BT difference (CCI-LUT) / $K$')
-    plotfile = str(ch) + '_' + 'BT_CCI_v_LUT.png'
+    plt.plot(BT_CCI_LUT, BT_CCI_LUT - BT_LUT)
+    plt.xlabel('BT (CCI_LUT) / $K$')
+    plt.ylabel('BT difference (CCI_LUT - LUT) / $K$')
+    plotfile = str(ch) + '_' + 'BT_CCI_LUT_v_BT_LUT.png'
     plt.tight_layout()
     plt.savefig(plotfile)
     plt.close('all')
@@ -196,7 +196,7 @@ if __name__ == "__main__":
     #   convert Ce,Cs,Cict,Lict --> L
     #
 
-    L_CCI = con.counts2rad_cci(channel,Ce,Cs,Cict,Lict_CCI)    
+    L_CCI_Lict_CCI = con.counts2rad_cci(channel,Ce,Cs,Cict,Lict_CCI)    
 
     #-------------------------------------------------------------------------------
     # Calculate radiance from counts and temperatures with measurement equation: HAR
@@ -252,46 +252,45 @@ if __name__ == "__main__":
 
     WV = []
 
-    L_HAR = con.count2rad(Ce,Cs,Cict,Lict_CCI,Tinst,WV,channel,a0,a1,a2,a3,a4,noT)
+    L_HAR_Lict_CCI = con.count2rad(Ce,Cs,Cict,Lict_CCI,Tinst,WV,channel,a0,a1,a2,a3,a4,noT)
 
     #
     # Convert radiance to BT
     #
 
-    BT_CCI = con.rad2bt_cci(L_CCI,channel)[:,3,3]
-    BT_HAR = con.rad2bt_cci(L_HAR,channel)[:,3,3]
-    BT_MMD = BT_MMD[:,3,3]
+    BT_CCI_Lict_CCI = con.rad2bt_cci(L_CCI_Lict_CCI,channel)[:,3,3]
+    BT_HAR_Lict_CCI = con.rad2bt_cci(L_HAR_Lict_CCI,channel)[:,3,3]
 
-    gd = BT_HAR > 0
+    gd = BT_HAR_Lict_CCI > 0
     
     fig, ax = plt.subplots(2, 2) 
-    ax[0,0].plot(BT_CCI[gd],'.',markersize=0.5, label='BT(CCI)')
-    ax[0,0].plot(BT_HAR[gd],'.',markersize=0.5, label='BT(HAR)')
+    ax[0,0].plot(BT_CCI_Lict_CCI[gd],'.',markersize=0.5, label='BT(CCI)')
+    ax[0,0].plot(BT_HAR_Lict_CCI[gd],'.',markersize=0.5, label='BT(HAR)')
     ax[0,0].plot(BT_MMD[gd],'.',markersize=0.5, label='BT(MMD)')
     ax[0,0].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)
     ax[0,0].set_ylim(200,320)
     ax[0,0].set_ylabel('BT / $K$')
-    ax[1,0].plot(BT_MMD[gd], BT_MMD[gd]-BT_CCI[gd],'.',markersize=0.5, label='BT(MMD)-BT(CCI)')
-    ax[1,0].plot(BT_MMD[gd], BT_MMD[gd]-BT_HAR[gd],'.',markersize=0.5, label='BT(MMD)-BT(HAR)')
+    ax[1,0].plot(BT_MMD[gd], BT_MMD[gd]-BT_CCI_Lict_CCI[gd],'.',markersize=0.5, label='BT(MMD)-BT(CCI)')
+    ax[1,0].plot(BT_MMD[gd], BT_MMD[gd]-BT_HAR_Lict_CCI[gd],'.',markersize=0.5, label='BT(MMD)-BT(HAR)')
     ax[1,0].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)
     ax[1,0].set_xlim(200,320)
     ax[1,0].set_ylim(-2,2)
     ax[1,0].set_xlabel('BT(MMD) / $K$')
     ax[1,0].set_ylabel('BT(MMD)-BT(x) / $K$')
-    ax[0,1].hist((BT_MMD[gd]-BT_CCI[gd]),bins=100, label='BT(MMD)-BT(CCI)')  
-    ax[0,1].hist((BT_MMD[gd]-BT_HAR[gd]),bins=100, label='BT(MMD)-BT(HAR)') 
+    ax[0,1].hist((BT_MMD[gd]-BT_CCI_Lict_CCI[gd]),bins=100, label='BT(MMD)-BT(CCI)')  
+    ax[0,1].hist((BT_MMD[gd]-BT_HAR_Lict_CCI[gd]),bins=100, label='BT(MMD)-BT(HAR)') 
     ax[0,1].set_xlim(-2,2)
     ax[0,1].set_xlabel('BT(MMD)-BT(x) / $K$')
     ax[0,1].set_ylabel('count (nbins=100)')
     ax[0,1].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)
-    ax[1,1].plot(BT_MMD[gd], BT_CCI[gd], '.',markersize=0.5, label='BT(CCI)')
-    ax[1,1].plot(BT_MMD[gd], BT_HAR[gd], '.',markersize=0.5, label='BT(HAR)')
+    ax[1,1].plot(BT_MMD[gd], BT_CCI_Lict_CCI[gd], '.',markersize=0.5, label='BT(CCI)')
+    ax[1,1].plot(BT_MMD[gd], BT_HAR_Lict_CCI[gd], '.',markersize=0.5, label='BT(HAR)')
     ax[1,1].legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)
     ax[1,1].set_xlim(200,320)
     ax[1,1].set_ylim(200,320)
     ax[1,1].set_xlabel('BT(MMD) / $K$')
     ax[1,1].set_ylabel('BT(x) / $K$')
-    plotfile = str(ch) + '_' + 'BT_v_BT_MMD.png'
+    plotfile = str(ch) + '_' + 'BT_MMD_v_BT(x).png'
     plt.tight_layout()
     plt.savefig(plotfile)
     plt.close('all')
@@ -300,20 +299,20 @@ if __name__ == "__main__":
     # Test MMD counts2rad_cci versus MMD bt2rad conversion over range of Lict_LUT calculated from Tict in MMD file
     #
 
-    L_HAR = con.count2rad(Ce,Cs,Cict,Lict_LUT,Tinst,WV,channel,a0,a1,a2,a3,a4,noT)[:,3,3]
-    L_MMD_counts2rad = con.counts2rad_cci(channel,Ce,Cs,Cict,Lict_LUT)[:,3,3]
-    L_MMD_bt2rad = con.bt2rad(BT_MMD,channel,lut)
-    bd = L_MMD_bt2rad < -999.
-    L_MMD_bt2rad[bd] = np.nan
-    gd = np.isfinite(L_MMD_bt2rad)
+    L_CCI_Lict_LUT = con.counts2rad_cci(channel,Ce,Cs,Cict,Lict_LUT)[:,3,3]
+    L_HAR_Lict_LUT = con.count2rad(Ce,Cs,Cict,Lict_LUT,Tinst,WV,channel,a0,a1,a2,a3,a4,noT)[:,3,3]
+    L_MMD_LUT = con.bt2rad(BT_MMD,channel,lut)
+    bd = L_MMD_LUT < -999.
+    L_MMD_LUT[bd] = np.nan
+    gd = np.isfinite(L_MMD_LUT)
 
     fig, ax = plt.subplots()
-    plt.plot(L_MMD_bt2rad[gd], L_MMD_bt2rad[gd]-L_MMD_counts2rad[gd], '.', markersize=0.5, label='MMD(bt2rad)-MMD(counts2rad)')
-    plt.plot(L_MMD_bt2rad[gd], L_MMD_bt2rad[gd]-L_HAR[gd], '.', markersize=0.5, label='MMD(bt2rad)-HAR')
+    plt.plot(L_MMD_LUT[gd], L_MMD_LUT[gd]-L_CCI_Lict_LUT[gd], '.', markersize=0.5, label='MMD(LUT)-CCI(LUT)')
+    plt.plot(L_MMD_LUT[gd], L_MMD_LUT[gd]-L_HAR_Lict_LUT[gd], '.', markersize=0.5, label='MMD(LUT)-HAR(LUT)')
     ax.legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)
-    plt.xlabel('L: MMD(bt2rad) / $W m^{-2}sr^{-1}$')
+    plt.xlabel('L: MMD(LUT) / $W m^{-2}sr^{-1}$')
     plt.ylabel('L difference / $W m^{-2}sr^{-1}$')
-    plotfile = str(ch) + '_' + 'L_MMD_v_HAR_LUT.png'
+    plotfile = str(ch) + '_' + 'L_MMD_LUT_v_L(x)_LUT.png'
     plt.tight_layout()
     plt.savefig(plotfile)
     plt.close('all')
@@ -322,20 +321,20 @@ if __name__ == "__main__":
     # Test MMD counts2rad_cci versus MMD bt2rad conversion over range of Lict_CCI calculated from Tict in MMD file
     #
 
-    L_HAR = con.count2rad(Ce,Cs,Cict,Lict_CCI,Tinst,WV,channel,a0,a1,a2,a3,a4,noT)[:,3,3]
-    L_MMD_counts2rad = con.counts2rad_cci(channel,Ce,Cs,Cict,Lict_CCI)[:,3,3]
-    L_MMD_bt2rad = con.bt2rad_cci(BT_MMD,channel)
-    bd = L_MMD_bt2rad < -999.
-    L_MMD_bt2rad[bd] = np.nan
-    gd = np.isfinite(L_MMD_bt2rad)
+    L_CCI_Lict_CCI = con.counts2rad = con.counts2rad_cci(channel,Ce,Cs,Cict,Lict_CCI)[:,3,3]
+    L_HAR_Lict_CCI = con.count2rad(Ce,Cs,Cict,Lict_CCI,Tinst,WV,channel,a0,a1,a2,a3,a4,noT)[:,3,3]
+    L_MMD_CCI = con.bt2rad_cci(BT_MMD,channel)
+    bd = L_MMD_CCI < -999.
+    L_MMD_CCI[bd] = np.nan
+    gd = np.isfinite(L_MMD_CCI)
 
     fig, ax = plt.subplots()
-    plt.plot(L_MMD_bt2rad[gd], L_MMD_bt2rad[gd]-L_MMD_counts2rad[gd], '.', markersize=0.5, label='MMD(bt2rad_cci)-MMD(counts2rad_cci)')
-    plt.plot(L_MMD_bt2rad[gd], L_MMD_bt2rad[gd]-L_HAR[gd], '.', markersize=0.5, label='MMD(bt2rad_cci)-HAR(Lict_CCI)')
+    plt.plot(L_MMD_CCI[gd], L_MMD_CCI[gd]-L_CCI_Lict_CCI[gd], '.', markersize=0.5, label='MMD(CCI)-CCI(CCI)')
+    plt.plot(L_MMD_CCI[gd], L_MMD_CCI[gd]-L_HAR_Lict_CCI[gd], '.', markersize=0.5, label='MMD(CCI)-HAR(CCI)')
     ax.legend(loc=1, markerscale=20, scatterpoints=5, fontsize=8)
-    plt.xlabel('L: MMD(bt2rad_cci) / $W m^{-2}sr^{-1}$')
+    plt.xlabel('L: MMD(CCI) / $W m^{-2}sr^{-1}$')
     plt.ylabel('L difference / $W m^{-2}sr^{-1}$')
-    plotfile = str(ch) + '_' + 'L_MMD_v_HAR_CCI.png'
+    plotfile = str(ch) + '_' + 'L_MMD_CCI_v_L(x)_CCI.png'
     plt.tight_layout()
     plt.savefig(plotfile)
     plt.close('all')
