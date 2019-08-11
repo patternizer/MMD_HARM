@@ -321,7 +321,7 @@ if __name__ == "__main__":
     # Test MMD counts2rad_cci versus MMD bt2rad conversion over range of Lict_CCI calculated from Tict in MMD file
     #
 
-    L_CCI_Lict_CCI = con.counts2rad = con.counts2rad_cci(channel,Ce,Cs,Cict,Lict_CCI)[:,3,3]
+    L_CCI_Lict_CCI = con.counts2rad_cci(channel,Ce,Cs,Cict,Lict_CCI)[:,3,3]
     L_HAR_Lict_CCI = con.count2rad(Ce,Cs,Cict,Lict_CCI,Tinst,WV,channel,a0,a1,a2,a3,a4,noT)[:,3,3]
     L_MMD_CCI = con.bt2rad_cci(BT_MMD,channel)
     bd = L_MMD_CCI < -999.
