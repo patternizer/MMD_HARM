@@ -29,9 +29,11 @@ Data files needed to run the tests:
 
 Available on request from https://patternizer.github.io
 
+## License
+
+The code is distributed under terms and conditions of the [MIT license](https://opensource.org/licenses/MIT).
+
 ## Contact information
 
-* Michael Taylor (michael.taylor@reading.ac.uk)
-
-
+* [Michael Taylor](https://patternizer.github.io)
 
